@@ -1,0 +1,18 @@
+
+> my-project@0.1.0 dev
+> next dev -p 3002
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://10.2.0.2:3002
+✓ Ready in 428ms
+Creating turbopack project { dir: "E:\\Mazen's projects\\merova-healthcare-hero", testMode: true }
+
+ GET / 200 in 1153ms (next.js: 788ms, application-code: 365ms)
+ GET / 200 in 153ms (next.js: 8ms, application-code: 145ms)
+ GET / 200 in 342ms (next.js: 15ms, application-code: 327ms)
+✓ Compiled in 328ms
+ GET / 200 in 188ms (next.js: 118ms, application-code: 70ms)
+✓ Compiled in 87ms
+ GET / 200 in 113ms (next.js: 68ms, application-code: 46ms)
+[?25h
