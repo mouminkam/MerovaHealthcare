@@ -372,7 +372,24 @@ export function ThesisHorizontalScroll() {
       requestAnimationFrame(() => ScrollTrigger.refresh())
     }, sectionRef)
 
+    // The pin's start depends on everything above it. Re-measure when those sections
+    // change height (web fonts swapping in, reveals settling) — otherwise the trigger
+    // keeps a stale start and can pin early, over the section before it.
+    let timer = 0
+    const refresh = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => ScrollTrigger.refresh(), 120)
+    }
+    const ro = new ResizeObserver(refresh)
+    ;['top', 'platform'].forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) ro.observe(el)
+    })
+    document.fonts?.ready.then(refresh)
+
     return () => {
+      window.clearTimeout(timer)
+      ro.disconnect()
       triggerRef.current = null
       ctx.revert()
     }

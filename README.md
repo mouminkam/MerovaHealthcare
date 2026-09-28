@@ -83,17 +83,44 @@ The previous hero had the same scroll-scrub idea, but played back a **189-frame 
 | | Before | After |
 | --- | --- | --- |
 | Hero assets | 189 images · 12 MB | 0 images |
-| Whole page | 12 MB+ | 387 KB |
+| Whole page | 12 MB+ | 420 KB (the whole redesigned site) |
 | Sharpness | 720p stretched to full screen | native pixel density |
 | Smoothness | 189 fixed frames | a new frame for every scroll position |
 | Headline visible | after scrolling ~30% of the pin | on first paint |
 | Palette | teal footage on a burgundy/coral theme | the theme's own coral, burgundy and peach |
 
+## One visual language, hero to footer
+
+The rest of the site speaks the hero's language instead of repeating a card template:
+
+- **One colour vocabulary.** Generics are coral, CMO is burgundy, Specialty is peach and independent
+  manufacturers are slate — in the hero scene, the platform explorer, the portfolio map, every legend and
+  every chart (`lib/verticals.ts`). Colour always means a vertical; it's never decoration.
+- **A mark drawn from the sphere.** The logo is the platform sphere reduced to seven nodes — a flat-top
+  geodesic hexagon banded peach → coral → burgundy around a core (`components/ui/Logo.tsx`, also the favicon).
+- **Exhibits, not cards.** Data sits in framed figures captioned like an investor memo ("Exhibit 4 ·
+  Portfolio sites"), and every chart is drawn from the site's own numbers.
+- **Type with roles.** Syne for display, Inter for reading, Geist Mono for labels and figures.
+- **Motion that echoes the scrub, in few places.** The ROVA letters fill as you scroll past them and the
+  mission statement brightens word by word; everything else just rises in once.
+
 ## What's on the page
 
-Platform overview · investment thesis (horizontal scroll) · market opportunity · portfolio companies ·
-CMO capabilities · return model · leadership & advisory board · the ROVA framework · mission & vision ·
-contact.
+| Section | What it shows |
+| --- | --- |
+| Platform | The hero's finished sphere as an explorer — hover a vertical and its band lights while the others dim; each vertical lists its real portfolio companies |
+| Thesis | Five pinned, horizontally scrubbed panels, each with an exhibit: a unit chart of 15,000+ manufacturers, the 3–5x value range, 25–40% cost reduction, today's $420M portfolio revenue stacked against the $1B target, and 20% IRR compounding onto the 2.5–3x MOIC target |
+| Market | Circles with area proportional to market value, and the 8.2% CAGR carried to an implied ~$2.1T in 2030 (labelled as derived) |
+| Portfolio | The five sites plotted by real latitude and longitude, linked to the Zurich headquarters; the lit link carries a flow of pulses |
+| CMO | Capacity by dosage form on one linear scale, certifications, and the formulation → packaging path |
+| Returns | The target terms, value creation as one 100% bar (operations, the ROVA lever, is the only coral segment), and a Gantt timeline with distributions and the exit window marked |
+| Leadership | A roster with monograms ringed in the platform's bands |
+| ROVA | The four steps under outlined letters that fill in order as you scroll |
+| Mission | The purpose statement, brightening word by word as it's read |
+| Contact | A simulated inquiry form with native radio pills and a proper sent state |
+
+The navigation is a floating pill with a scroll-spy that measures which section holds the middle of the
+viewport, so the highlight stays correct through the pinned thesis in both directions.
 
 ## Tech stack
 
@@ -103,7 +130,8 @@ contact.
 | Styling | **Tailwind CSS v4** — brand tokens in `app/globals.css` (burgundy, coral, slate) |
 | Motion | **GSAP ScrollTrigger** (thesis horizontal scroll), **Framer Motion** (reveals), **Lenis** (smooth scroll) |
 | Hero | Hand-written 2D canvas renderer with 3D projection, pinned with CSS `position: sticky` — no WebGL, no libraries |
-| Type | **Syne** (display) · **Inter** (text), self-hosted through `next/font` |
+| Type | **Syne** (display) · **Inter** (text) · **Geist Mono** (labels, figures), self-hosted through `next/font` |
+| Charts | Hand-built SVG and CSS — no charting library |
 
 ## Project structure
 
@@ -111,14 +139,21 @@ contact.
 app/
   layout.tsx            Fonts, metadata, viewport
   page.tsx              Section order
-  globals.css           Theme tokens + utilities
+  globals.css           Theme tokens (incl. the vertical colours) + utilities
+  icon.svg              Favicon — the Merova mark
 components/
   sections/             One file per page section (PlatformSequenceHero, PlatformOverview, …)
   providers/            Lenis smooth-scroll provider
-  ui/                   Navbar + shadcn/ui primitives
+  ui/
+    Navbar.tsx          Floating pill navigation with scroll-spy
+    Logo.tsx            The mark and wordmark
+    SectionHeader.tsx   Eyebrow + headline + lede, shared by every section
+    Exhibit.tsx         The framed, captioned figure
+    …                   shadcn/ui primitives
 lib/
-  hero-scene.ts         The hero's scene generator, timeline and canvas renderer
-  portfolio.ts          Portfolio companies — shared by the Portfolio section and the hero
+  hero-scene.ts         Scene generator, timeline and canvas renderer (hero + platform explorer)
+  verticals.ts          The three verticals and their colours
+  portfolio.ts          Portfolio companies, site coordinates and HQ
   gsap.ts, lenis.ts     GSAP/Lenis setup
   animations.ts         Shared Framer Motion variants
 ```
@@ -132,6 +167,10 @@ lib/
   you'd shorten the section (it's one class: `h-[400svh]`) or drop the pin.
 - The scene is built once for the viewport it loads in, so rotating a phone keeps the original field
   proportions (it still resizes and stays sharp).
+- The platform explorer runs a second canvas, but only while it's on screen, and the hero's canvas stops once
+  you scroll past it — the two only overlap briefly at the hand-over between the sections.
+- The portfolio map is a coordinate plot, not a basemap — no coastlines, just the sites on a graticule. It
+  keeps the page free of map data and tiles, at the cost of geographic context.
 - The inquiry form is simulated for the demo. Reconnecting it means replacing `handleSubmit` in
   `components/sections/ContactSection.tsx` with a call to a real endpoint.
 - Several shadcn/ui primitives in `components/ui/` are unused by this page; they're kept as the project's

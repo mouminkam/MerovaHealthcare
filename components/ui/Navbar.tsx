@@ -29,20 +29,40 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Scroll-spy: the section crossing the middle of the viewport is "current".
-  // Every section is watched — including ones without a nav link — so passing
-  // through, say, the ROVA section clears the highlight instead of leaving a stale one.
+  // Scroll-spy: whichever section contains the viewport's middle line is "current".
+  // Measured directly once per frame rather than inferred from IntersectionObserver
+  // events, which can arrive out of order while GSAP re-measures its pinned section.
+  // Sections without a nav link (ROVA, CMO…) simply clear the highlight.
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id === 'top' ? '' : entry.target.id)
-        }
-      },
-      { rootMargin: '-45% 0px -50% 0px' },
-    )
-    document.querySelectorAll('main section[id]').forEach((el) => io.observe(el))
-    return () => io.disconnect()
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('main section[id]'))
+    let raf = 0
+    let settle = 0
+    const update = () => {
+      raf = 0
+      const mid = window.innerHeight * 0.48
+      // First match wins: a pinned section is only ever the sole match while it's
+      // genuinely pinned, so a frame of stale pin state can't steal the highlight.
+      const current = sections.find((s) => {
+        const r = s.getBoundingClientRect()
+        return r.top <= mid && r.bottom > mid
+      })?.id
+      setActive(!current || current === 'top' ? '' : current)
+    }
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+      // …and one more measurement once scrolling settles, after GSAP has caught up.
+      window.clearTimeout(settle)
+      settle = window.setTimeout(update, 160)
+    }
+    update()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearTimeout(settle)
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+    }
   }, [])
 
   // Lock scrolling (native and Lenis) while the mobile menu is open.
