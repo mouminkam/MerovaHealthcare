@@ -241,3 +241,37 @@
     }
   }
 }
+
+/* Hero: the card frame the scene starts in (JS opens it to full bleed on scroll). */
+.hero-frame {
+  clip-path: inset(84px 12px 12px 12px round 28px);
+}
+.hero-frame-border {
+  top: 84px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+}
+@media (min-width: 768px) {
+  .hero-frame {
+    clip-path: inset(92px 16px 16px 16px round 28px);
+  }
+  .hero-frame-border {
+    top: 92px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* Hero scroll cue: a light running down a hairline. */
+@keyframes hero-cue-run {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(200%); }
+}
+.hero-cue {
+  animation: hero-cue-run 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-cue { animation: none; }
+}

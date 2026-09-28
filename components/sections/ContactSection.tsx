@@ -7,7 +7,7 @@ import {
   staggerContainerVariant,
   defaultViewport 
 } from '@/lib/animations'
-import { Mail, MapPin, ArrowRight } from 'lucide-react'
+import { Mail, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 const inquiryTypes = [
   { id: 'investor', label: 'Investor Inquiry' },
@@ -25,14 +25,19 @@ export function ContactSection() {
     message: '',
   })
 
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  // Demo build: nothing leaves the browser. The request is simulated so the
+  // full sending → sent flow can be tried without a mail backend.
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Create mailto link with form data
-    const subject = encodeURIComponent(`${inquiryTypes.find(t => t.id === selectedType)?.label} - ${formData.organization}`)
-    const body = encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\nOrganization: ${formData.organization}\nInquiry Type: ${selectedType}\n\nMessage:\n${formData.message}`
-    )
-    window.location.href = `mailto:investors@merova.com?subject=${subject}&body=${body}`
+    setStatus('sending')
+    window.setTimeout(() => setStatus('sent'), 900)
+  }
+
+  const resetForm = () => {
+    setFormData({ name: '', email: '', organization: '', message: '' })
+    setStatus('idle')
   }
 
   return (
@@ -88,10 +93,10 @@ export function ContactSection() {
                 <div>
                   <h3 className="font-medium text-slate-50 mb-1">Email</h3>
                   <a 
-                    href="mailto:investors@merova.com" 
+                    href="mailto:investors@merova.test" 
                     className="text-slate-400 hover:text-coral transition-colors"
                   >
-                    investors@merova.com
+                    investors@merova.test
                   </a>
                 </div>
               </motion.div>
@@ -120,7 +125,29 @@ export function ContactSection() {
             viewport={defaultViewport}
             variants={fadeUpVariant}
           >
-            <form 
+            {status === 'sent' ? (
+              <div
+                role="status"
+                className="flex h-full flex-col items-start justify-center gap-4 p-8 lg:p-10 rounded-2xl bg-slate-800/30 border border-slate-700/50"
+              >
+                <div className="w-12 h-12 rounded-xl bg-coral/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-coral" />
+                </div>
+                <h3 className="font-display text-2xl font-semibold text-slate-50">Inquiry sent</h3>
+                <p className="text-slate-400 leading-relaxed">
+                  Thanks{formData.name ? `, ${formData.name.split(' ')[0]}` : ''}. This is a demo, so nothing was
+                  actually delivered — on the live site, the investor relations team replies within 2 business days.
+                </p>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="mt-2 text-sm font-medium text-coral hover:text-coral-light transition-colors"
+                >
+                  Send another inquiry
+                </button>
+              </div>
+            ) : (
+            <form
               onSubmit={handleSubmit}
               className="p-8 lg:p-10 rounded-2xl bg-slate-800/30 border border-slate-700/50"
             >
@@ -214,11 +241,12 @@ export function ContactSection() {
 
                 <motion.button
                   type="submit"
+                  disabled={status === 'sending'}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg bg-coral text-slate-950 font-medium hover:bg-coral-light transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg bg-coral text-slate-950 font-medium hover:bg-coral-light transition-colors disabled:opacity-60"
                 >
-                  Send Inquiry
+                  {status === 'sending' ? 'Sending inquiry…' : 'Send Inquiry'}
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
               </div>
@@ -228,6 +256,7 @@ export function ContactSection() {
                 We&apos;ll respond within 2 business days.
               </p>
             </form>
+            )}
           </motion.div>
         </div>
       </div>

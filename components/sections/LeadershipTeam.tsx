@@ -22,50 +22,50 @@ const teamMembers: TeamMember[] = [
     name: 'Dr. Alexander Reinholt',
     role: 'Chairman & CEO',
     initials: 'AR',
-    bio: '25+ years in pharmaceutical M&A and operations. Former McKinsey Partner, led $5B+ in healthcare transactions.',
+    bio: '25+ years in pharmaceutical M&A and operations. Former strategy-consulting partner who led $5B+ in healthcare transactions.',
     linkedin: '#',
   },
   {
     name: 'Sarah Chen',
     role: 'Chief Investment Officer',
     initials: 'SC',
-    bio: 'Previously at Blackstone Healthcare, managed $2B healthcare portfolio. Stanford MBA, Johns Hopkins MPH.',
+    bio: 'Previously managed a $2B healthcare portfolio at a global private-equity firm. MBA and MPH.',
     linkedin: '#',
   },
   {
     name: 'Dr. Raj Patel',
     role: 'Chief Operating Officer',
     initials: 'RP',
-    bio: 'Former SVP Operations at Teva. Led manufacturing integration for 15+ facilities across 3 continents.',
+    bio: 'Former SVP Operations at a top-10 generics manufacturer. Led manufacturing integration for 15+ facilities across 3 continents.',
     linkedin: '#',
   },
   {
     name: 'Maria Kowalski',
     role: 'Chief Financial Officer',
     initials: 'MK',
-    bio: '20 years in healthcare finance. Former CFO at Actavis, led financial integration of $10B+ acquisitions.',
+    bio: '20 years in healthcare finance. Former CFO of a multinational specialty-pharma group; led financial integration of $10B+ in acquisitions.',
     linkedin: '#',
   },
   {
     name: 'Dr. James Morrison',
     role: 'Chief Scientific Officer',
     initials: 'JM',
-    bio: 'PhD Pharmaceutical Sciences. 50+ FDA approvals, built R&D organizations at Mylan and Sandoz.',
+    bio: 'PhD Pharmaceutical Sciences. 50+ product approvals; built R&D organizations at two global generics companies.',
     linkedin: '#',
   },
   {
     name: 'Lisa Nakamura',
     role: 'Chief Regulatory Officer',
     initials: 'LN',
-    bio: 'Former FDA reviewer. 18 years regulatory affairs experience across US, EU, and emerging markets.',
+    bio: 'Former drug-agency reviewer. 18 years of regulatory affairs experience across the US, EU and emerging markets.',
     linkedin: '#',
   },
 ]
 
 const advisoryBoard = [
-  { name: 'Prof. Henrik Strom', role: 'Former CEO, Novo Nordisk', initials: 'HS' },
-  { name: 'Dr. Catherine Wells', role: 'Former FDA Commissioner', initials: 'CW' },
-  { name: 'Marcus Thompson', role: 'Former Partner, KKR Healthcare', initials: 'MT' },
+  { name: 'Prof. Henrik Strom', role: 'Former CEO, Nordic biopharma group', initials: 'HS' },
+  { name: 'Dr. Catherine Wells', role: 'Former senior drug regulator', initials: 'CW' },
+  { name: 'Marcus Thompson', role: 'Former partner, healthcare private equity', initials: 'MT' },
 ]
 
 export function LeadershipTeam() {

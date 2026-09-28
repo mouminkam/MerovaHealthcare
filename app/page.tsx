@@ -1,6 +1,6 @@
 import { LenisProvider } from '@/components/providers/LenisProvider'
 import { Navbar } from '@/components/ui/Navbar'
-import { FrameSequenceHero } from '@/components/sections/FrameSequenceHero'
+import { PlatformSequenceHero } from '@/components/sections/PlatformSequenceHero'
 import { PlatformOverview } from '@/components/sections/PlatformOverview'
 import { ThesisHorizontalScroll } from '@/components/sections/ThesisHorizontalScroll'
 import { MarketOpportunity } from '@/components/sections/MarketOpportunity'
@@ -21,8 +21,8 @@ export default function MerovaHomePage() {
         <Navbar />
         
         <main>
-          {/* Section 0: Frame Sequence Hero (pinned 400vh scroll) */}
-          <FrameSequenceHero />
+          {/* Section 1: Scroll-scrubbed platform sequence (pinned) */}
+          <PlatformSequenceHero />
           
           {/* Section 2: Platform Overview */}
           <PlatformOverview />
