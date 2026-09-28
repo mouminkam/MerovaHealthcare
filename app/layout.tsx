@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Syne, Inter } from 'next/font/google'
+import { Syne, Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -9,9 +9,16 @@ const syne = Syne({
   display: 'swap',
 })
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+})
+
+// Utility face for data: exhibit labels, axis ticks, figures.
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
   display: 'swap',
 })
 
@@ -50,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${inter.variable} bg-background`}>
+    <html lang="en" className={`${syne.variable} ${inter.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

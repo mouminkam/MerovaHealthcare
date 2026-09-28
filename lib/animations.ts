@@ -4,6 +4,19 @@ import type { Variants } from 'framer-motion'
 export const easeOutExpo = [0.16, 1, 0.3, 1] as const
 export const easeInOutExpo = [0.87, 0, 0.13, 1] as const
 
+// The site-wide reveal: a short rise and fade, the same curve the hero copy uses.
+export const reveal: Variants = {
+  hidden: { y: 24, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { duration: 0.8, ease: easeOutExpo } },
+}
+
+export const revealGroup: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+}
+
+export const inView = { once: true, amount: 0.25 } as const
+
 // Fade up animation
 export const fadeUpVariant: Variants = {
   hidden: { 

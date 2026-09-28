@@ -1,22 +1,22 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
-import { gsap } from '@/lib/gsap'
-import { 
-  fadeUpVariant, 
-  staggerContainerVariant,
-  defaultViewport 
-} from '@/lib/animations'
+import { motion } from 'framer-motion'
+import { easeOutExpo, inView, reveal, revealGroup } from '@/lib/animations'
+import { INDEPENDENT, VERTICALS, rgb } from '@/lib/verticals'
+import { SectionHeader } from '@/components/ui/SectionHeader'
+import { Exhibit } from '@/components/ui/Exhibit'
 
-const marketStats = [
-  { value: 1.4, suffix: 'T', prefix: '$', label: 'Global Pharma Market', description: 'Total addressable market size by 2025' },
-  { value: 680, suffix: 'B', prefix: '$', label: 'Generic Market', description: 'Generic pharmaceutical market value' },
-  { value: 180, suffix: 'B', prefix: '$', label: 'CMO Market', description: 'Contract manufacturing opportunity' },
-  { value: 8.2, suffix: '%', label: 'Annual Growth', description: 'CAGR through 2030' },
+const MARKETS = [
+  { label: 'Global pharma', value: 1400, display: '$1.4T', note: 'Total addressable market by 2025', color: INDEPENDENT, outline: true },
+  { label: 'Generics', value: 680, display: '$680B', note: 'Generic pharmaceutical market value', color: VERTICALS[0].rgb, outline: false },
+  { label: 'CMO', value: 180, display: '$180B', note: 'Contract manufacturing opportunity', color: VERTICALS[1].rgb, outline: false },
 ]
 
-const marketDrivers = [
+const CAGR = 0.082
+const START_YEAR = 2025
+const START_VALUE = 1.4 // $T
+
+const drivers = [
   'Aging global population driving healthcare demand',
   'Patent cliff creating generics opportunities',
   'Reshoring of pharmaceutical manufacturing',
@@ -24,286 +24,177 @@ const marketDrivers = [
   'Healthcare cost pressures driving efficiency',
 ]
 
-interface AnimatedCounterProps {
-  value: number
-  prefix?: string
-  suffix?: string
-  duration?: number
+/** Circles with area proportional to value, standing on one baseline. */
+function MarketCircles() {
+  const R = 128
+  const base = 282
+  const centers = [150, 388, 540]
+  return (
+    <svg viewBox="0 0 640 300" className="w-full" role="img" aria-label="Market size: global pharma $1.4 trillion, generics $680 billion, CMO $180 billion">
+      <line x1={10} y1={base} x2={630} y2={base} className="stroke-white/10" />
+      {MARKETS.map((m, i) => {
+        const r = R * Math.sqrt(m.value / MARKETS[0].value)
+        const cx = centers[i]
+        const cy = base - r
+        return (
+          <motion.g
+            key={m.label}
+            initial={{ scale: 0, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ duration: 1.1, ease: easeOutExpo, delay: 0.15 + i * 0.18 }}
+            style={{ transformOrigin: `${cx}px ${base}px` }}
+          >
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill={m.outline ? rgb(m.color, 0.06) : rgb(m.color, 0.9)}
+              stroke={rgb(m.color, m.outline ? 0.5 : 1)}
+              strokeWidth={1}
+              strokeDasharray={m.outline ? '3 4' : undefined}
+            />
+            <text
+              x={cx}
+              y={cy + (i === 2 ? 6 : 10)}
+              textAnchor="middle"
+              className="font-display font-bold"
+              style={{ fontSize: i === 2 ? 17 : i === 1 ? 28 : 34, letterSpacing: '-0.02em' }}
+              fill={m.outline ? '#f1f2f4' : '#12060a'}
+            >
+              {m.display}
+            </text>
+          </motion.g>
+        )
+      })}
+    </svg>
+  )
 }
 
-function AnimatedCounter({ value, prefix = '', suffix = '', duration = 2 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0)
-  const counterRef = useRef<HTMLSpanElement>(null)
-  const isInView = useInView(counterRef, { once: true, amount: 0.5 })
-
-  useEffect(() => {
-    if (!isInView) return
-
-    const obj = { val: 0 }
-    
-    gsap.to(obj, {
-      val: value,
-      duration: duration,
-      ease: 'power2.out',
-      onUpdate: () => {
-        setDisplayValue(obj.val)
-      },
-    })
-  }, [isInView, value, duration])
-
-  const formatValue = (val: number) => {
-    if (val >= 100) return Math.round(val).toLocaleString()
-    if (val >= 10) return val.toFixed(1)
-    return val.toFixed(1)
-  }
-
+/** The 8.2% CAGR carried forward to 2030. */
+function GrowthLine() {
+  const years = Array.from({ length: 6 }, (_, i) => START_YEAR + i)
+  const values = years.map((_, i) => START_VALUE * Math.pow(1 + CAGR, i))
+  const X = (i: number) => 24 + (i / 5) * 432
+  const Y = (v: number) => 150 - ((v - 1.2) / 1.0) * 130
+  const line = values.map((v, i) => `${i ? 'L' : 'M'} ${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ')
+  const area = `${line} L ${X(5)} 160 L ${X(0)} 160 Z`
   return (
-    <span ref={counterRef}>
-      {prefix}{formatValue(displayValue)}{suffix}
-    </span>
+    <svg viewBox="0 0 480 186" className="w-full" role="img" aria-label={`At ${CAGR * 100}% a year the market grows from $1.4T in 2025 to about $${values[5].toFixed(1)}T in 2030`}>
+      <defs>
+        <linearGradient id="market-growth-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--coral)" stopOpacity="0.28" />
+          <stop offset="1" stopColor="var(--coral)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        d={area}
+        fill="url(#market-growth-fill)"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 1, delay: 0.6 }}
+      />
+      <motion.path
+        d={line}
+        fill="none"
+        stroke="var(--coral)"
+        strokeWidth={2}
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        whileInView={{ pathLength: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 1.3, ease: easeOutExpo }}
+      />
+      {[0, 5].map((i) => (
+        <g key={i}>
+          <circle cx={X(i)} cy={Y(values[i])} r={4} fill="var(--coral)" />
+          <text x={X(i)} y={Y(values[i]) - 12} textAnchor={i ? 'end' : 'start'} className="fill-slate-100 font-mono text-[12px]">
+            ${values[i].toFixed(1)}T
+          </text>
+        </g>
+      ))}
+      {years.map((y, i) => (
+        <text key={y} x={X(i)} y={180} textAnchor="middle" className="fill-slate-500 font-mono text-[10px]">
+          {y}
+        </text>
+      ))}
+    </svg>
   )
 }
 
 export function MarketOpportunity() {
   return (
-    <section 
-      id="market"
-      className="relative py-24 md:py-32 section-padding bg-slate-950 overflow-hidden"
-      aria-labelledby="market-heading"
-    >
-      {/* Decorative SVG background - concentric circles */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 opacity-10 pointer-events-none">
-        <svg width="800" height="800" viewBox="0 0 800 800" fill="none">
-          {[100, 200, 300, 400].map((r, i) => (
-            <motion.circle
-              key={r}
-              cx="400"
-              cy="400"
-              r={r}
-              stroke="currentColor"
-              strokeWidth="1"
-              className="text-coral"
-              initial={{ pathLength: 0, opacity: 0 }}
-              whileInView={{ pathLength: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.5, delay: i * 0.2, ease: 'easeOut' }}
-            />
-          ))}
-        </svg>
-      </div>
+    <section id="market" aria-labelledby="market-heading" className="relative section-padding py-28 md:py-36">
+      <div className="mx-auto max-w-7xl">
+        <SectionHeader
+          id="market-heading"
+          eyebrow="Market opportunity"
+          title={
+            <>
+              A $1.4 trillion market.
+              <br />
+              <span className="text-coral">Still run plant by plant.</span>
+            </>
+          }
+          lede="Demographics, patent expiries and reshoring keep growing demand for pharmaceutical manufacturing — while the supply side stays fragmented."
+        />
 
-      <div className="max-w-7xl mx-auto relative">
-        {/* Section header */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="mb-16 md:mb-24"
-        >
-          <motion.span 
-            variants={fadeUpVariant}
-            className="inline-block text-sm font-medium text-coral uppercase tracking-wider mb-4"
-          >
-            Market Opportunity
-          </motion.span>
-          
-          <motion.h2 
-            id="market-heading"
-            variants={fadeUpVariant}
-            className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-slate-50 mb-6 max-w-3xl"
-          >
-            A Trillion-Dollar Opportunity in Healthcare Manufacturing
-          </motion.h2>
-          
-          <motion.p 
-            variants={fadeUpVariant}
-            className="text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed"
-          >
-            The pharmaceutical manufacturing sector presents compelling investment opportunities 
-            driven by demographic shifts, regulatory evolution, and market dynamics.
-          </motion.p>
-        </motion.div>
-
-        {/* Stats grid */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-16 md:mb-24"
-        >
-          {marketStats.map((stat) => (
-            <motion.div
-              key={stat.label}
-              variants={fadeUpVariant}
-              className="p-6 lg:p-8 rounded-2xl bg-slate-900/50 border border-slate-800/50"
-            >
-              <div className="font-display text-4xl md:text-5xl font-bold text-slate-50 mb-2">
-                <AnimatedCounter 
-                  value={stat.value} 
-                  prefix={stat.prefix} 
-                  suffix={stat.suffix} 
-                />
-              </div>
-              <div className="font-medium text-coral mb-1">
-                {stat.label}
-              </div>
-              <div className="text-sm text-slate-500">
-                {stat.description}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Market drivers */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="grid md:grid-cols-2 gap-12 items-center"
-        >
-          <div>
-            <motion.h3 
-              variants={fadeUpVariant}
-              className="font-display text-2xl md:text-3xl font-bold text-slate-50 mb-8"
-            >
-              Key Market Drivers
-            </motion.h3>
-            
-            <ul className="space-y-4">
-              {marketDrivers.map((driver, index) => (
-                <motion.li
-                  key={index}
-                  variants={fadeUpVariant}
-                  className="flex items-start gap-4"
-                >
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-coral/10 flex items-center justify-center mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-coral" />
-                  </span>
-                  <span className="text-slate-300 leading-relaxed">
-                    {driver}
-                  </span>
-                </motion.li>
+        <div className="mt-16 grid gap-6 lg:mt-20 lg:grid-cols-12">
+          <Exhibit label="Exhibit 2" title="Market size" note="Circle area ∝ value" className="lg:col-span-7">
+            <MarketCircles />
+            <ul className="mt-8 grid gap-5 border-t border-white/[0.06] pt-6 sm:grid-cols-3">
+              {MARKETS.map((m) => (
+                <li key={m.label}>
+                  <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-slate-300">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={m.outline ? { border: `1px dashed ${rgb(m.color)}` } : { background: rgb(m.color) }}
+                    />
+                    {m.label}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{m.note}</p>
+                </li>
               ))}
             </ul>
-          </div>
+            <p className="mt-6 text-xs leading-5 text-slate-600">
+              CMO is a services market, shown for scale — not as a slice of pharma sales.
+            </p>
+          </Exhibit>
 
-          {/* Visual representation */}
-          <motion.div
-            variants={fadeUpVariant}
-            className="relative aspect-square max-w-md mx-auto"
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* Animated concentric circles */}
-              <svg viewBox="0 0 400 400" className="w-full h-full">
-                <defs>
-                  <linearGradient id="marketGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="var(--coral)" />
-                    <stop offset="100%" stopColor="var(--burgundy)" />
-                  </linearGradient>
-                </defs>
-                
-                {/* Outer ring - Total market */}
-                <motion.circle
-                  cx="200"
-                  cy="200"
-                  r="180"
-                  fill="none"
-                  stroke="url(#marketGradient)"
-                  strokeWidth="2"
-                  strokeDasharray="4 4"
-                  initial={{ rotate: 0 }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-                  style={{ transformOrigin: 'center' }}
-                />
-                
-                {/* Middle ring - Addressable */}
-                <motion.circle
-                  cx="200"
-                  cy="200"
-                  r="130"
-                  fill="none"
-                  stroke="var(--coral)"
-                  strokeWidth="1"
-                  opacity="0.5"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  whileInView={{ scale: 1, opacity: 0.5 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, delay: 0.3 }}
-                />
-                
-                {/* Inner ring - Target */}
-                <motion.circle
-                  cx="200"
-                  cy="200"
-                  r="80"
-                  fill="var(--coral)"
-                  opacity="0.1"
-                  initial={{ scale: 0, opacity: 0 }}
-                  whileInView={{ scale: 1, opacity: 0.1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                />
-                
-                {/* Center dot */}
-                <motion.circle
-                  cx="200"
-                  cy="200"
-                  r="8"
-                  fill="var(--coral)"
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.7 }}
-                />
-              </svg>
-              
-              {/* Labels */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="font-display text-3xl font-bold text-slate-50">
-                    $1.4T
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    Total Market
-                  </div>
-                </div>
-              </div>
+          <Exhibit label="Exhibit 3" title="Market growth" note="Implied at 8.2% CAGR" className="flex flex-col lg:col-span-5">
+            <p className="font-display text-[clamp(3rem,5vw,4.5rem)] font-bold leading-none tracking-[-0.045em] text-coral">8.2%</p>
+            <p className="mt-3 text-slate-400">Annual growth, through 2030</p>
+            <div className="mt-auto pt-10">
+              <GrowthLine />
             </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Marquee ticker */}
-        <div className="mt-16 md:mt-24 overflow-hidden">
-          <div className="flex items-center gap-8 animate-marquee">
-            {[...Array(2)].map((_, setIndex) => (
-              <div key={setIndex} className="flex items-center gap-8 shrink-0">
-                {['Generics', 'CMO Services', 'Specialty Pharma', 'API Manufacturing', 'Biosimilars', 'Drug Delivery'].map((item, i) => (
-                  <span 
-                    key={`${setIndex}-${i}`} 
-                    className="text-2xl md:text-3xl font-display font-medium text-slate-700 whitespace-nowrap"
-                  >
-                    {item} <span className="text-coral mx-4">·</span>
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+          </Exhibit>
         </div>
-      </div>
 
-      <style jsx>{`
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-          animation: marquee 30s linear infinite;
-        }
-      `}</style>
+        <motion.div
+          variants={revealGroup}
+          initial="hidden"
+          whileInView="visible"
+          viewport={inView}
+          className="mt-16 grid gap-10 lg:mt-24 lg:grid-cols-12"
+        >
+          <motion.h3 variants={reveal} className="font-display text-2xl font-bold tracking-[-0.02em] text-slate-50 lg:col-span-4">
+            What&apos;s driving demand
+          </motion.h3>
+          <ul className="lg:col-span-8">
+            {drivers.map((driver) => (
+              <motion.li
+                key={driver}
+                variants={reveal}
+                className="flex items-center gap-4 border-t border-white/[0.08] py-5 text-base text-slate-300 last:border-b md:text-lg"
+              >
+                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-coral" />
+                {driver}
+              </motion.li>
+            ))}
+          </ul>
+        </motion.div>
+      </div>
     </section>
   )
 }

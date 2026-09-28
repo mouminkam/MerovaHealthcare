@@ -1,155 +1,76 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { 
-  fadeUpVariant, 
-  staggerContainerVariant,
-  defaultViewport,
-  easeOutExpo 
-} from '@/lib/animations'
+import { Fragment, useRef } from 'react'
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'framer-motion'
+import { inView, reveal, revealGroup } from '@/lib/animations'
+import { Eyebrow } from '@/components/ui/SectionHeader'
+
+const statement =
+  'To transform pharmaceutical manufacturing through strategic consolidation, operational excellence, and unwavering commitment to quality and access.'
+
+const pillars = [
+  {
+    label: 'Vision',
+    text: 'To be the premier healthcare manufacturing platform, recognized for operational excellence, regulatory leadership, and sustainable value creation.',
+  },
+  {
+    label: 'Mission',
+    text: 'To build, integrate, and operate a world-class pharmaceutical manufacturing platform that delivers essential medicines to patients worldwide.',
+  },
+]
+
+/** One word of the statement, brightening as the reader scrolls past it. */
+function Word({ word, index, total, progress }: { word: string; index: number; total: number; progress: MotionValue<number> }) {
+  const start = index / total
+  const opacity = useTransform(progress, [start, start + 1.5 / total], [0.16, 1])
+  return <motion.span style={{ opacity }}>{word}</motion.span>
+}
 
 export function MissionVision() {
-  return (
-    <section 
-      id="mission"
-      className="relative py-24 md:py-40 section-padding bg-slate-950 overflow-hidden"
-      aria-labelledby="mission-heading"
-    >
-      {/* Background SVG pattern */}
-      <div className="absolute inset-0" aria-hidden="true">
-        <svg 
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 1200 600"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          {/* Animated organic shapes */}
-          <motion.ellipse
-            cx="200"
-            cy="300"
-            rx="300"
-            ry="200"
-            fill="none"
-            stroke="var(--coral)"
-            strokeWidth="1"
-            opacity="0.1"
-            initial={{ pathLength: 0, rotate: 0 }}
-            animate={{ pathLength: 1, rotate: 360 }}
-            transition={{ 
-              pathLength: { duration: 3, ease: 'easeInOut' },
-              rotate: { duration: 120, repeat: Infinity, ease: 'linear' }
-            }}
-            style={{ transformOrigin: '200px 300px' }}
-          />
-          
-          <motion.ellipse
-            cx="1000"
-            cy="300"
-            rx="250"
-            ry="180"
-            fill="none"
-            stroke="var(--burgundy)"
-            strokeWidth="1"
-            opacity="0.1"
-            initial={{ pathLength: 0, rotate: 0 }}
-            animate={{ pathLength: 1, rotate: -360 }}
-            transition={{ 
-              pathLength: { duration: 3, delay: 0.5, ease: 'easeInOut' },
-              rotate: { duration: 100, repeat: Infinity, ease: 'linear' }
-            }}
-            style={{ transformOrigin: '1000px 300px' }}
-          />
-          
-          {/* Center convergence point */}
-          <motion.circle
-            cx="600"
-            cy="300"
-            r="100"
-            fill="var(--coral)"
-            opacity="0.03"
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.5 }}
-          />
-        </svg>
-      </div>
+  const statementRef = useRef<HTMLHeadingElement>(null)
+  const reduced = useReducedMotion() ?? false
+  const { scrollYProgress } = useScroll({ target: statementRef, offset: ['start 85%', 'end 45%'] })
+  const words = statement.split(' ')
 
-      <div className="max-w-5xl mx-auto relative">
+  return (
+    <section id="mission" aria-labelledby="mission-heading" className="relative section-padding py-28 md:py-40">
+      <div className="mx-auto max-w-7xl">
+        <Eyebrow>Purpose</Eyebrow>
+        <h2
+          ref={statementRef}
+          id="mission-heading"
+          aria-label={statement}
+          className="mt-8 max-w-5xl font-display text-[clamp(2rem,4.4vw,4rem)] font-bold leading-[1.08] tracking-[-0.035em] text-slate-50"
+        >
+          {reduced
+            ? statement
+            : words.map((word, i) => (
+                <Fragment key={`${word}-${i}`}>
+                  <Word word={word} index={i} total={words.length} progress={scrollYProgress} />
+                  {i < words.length - 1 ? ' ' : null}
+                </Fragment>
+              ))}
+        </h2>
+
         <motion.div
+          variants={revealGroup}
           initial="hidden"
           whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="text-center"
+          viewport={inView}
+          className="mt-16 grid gap-10 lg:mt-24 lg:grid-cols-12"
         >
-          {/* Mission label */}
-          <motion.span 
-            variants={fadeUpVariant}
-            className="inline-block text-sm font-medium text-coral uppercase tracking-wider mb-8"
-          >
-            Our Purpose
-          </motion.span>
-
-          {/* Main statement */}
-          <motion.h2 
-            id="mission-heading"
-            variants={fadeUpVariant}
-            className="font-display text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-slate-50 leading-tight mb-8"
-          >
-            To transform pharmaceutical manufacturing through{' '}
-            <span className="text-gradient">strategic consolidation</span>,{' '}
-            operational excellence, and{' '}
-            <span className="text-gradient">unwavering commitment</span>{' '}
-            to quality and access.
-          </motion.h2>
-
-          {/* Supporting text */}
-          <motion.p 
-            variants={fadeUpVariant}
-            className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-12"
-          >
-            We believe that world-class pharmaceutical manufacturing should be efficient, 
-            accessible, and continuously improving—creating value for investors while 
-            advancing global health.
+          <motion.p variants={reveal} className="text-lg leading-8 text-slate-400 lg:col-span-4">
+            We believe that world-class pharmaceutical manufacturing should be efficient, accessible, and continuously improving —
+            creating value for investors while advancing global health.
           </motion.p>
-
-          {/* Vision/Mission boxes */}
-          <motion.div 
-            variants={staggerContainerVariant}
-            className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto"
-          >
-            <motion.div
-              variants={fadeUpVariant}
-              className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800/50 text-left"
-            >
-              <div className="w-12 h-12 rounded-xl bg-coral/10 flex items-center justify-center mb-4">
-                <span className="text-2xl">🎯</span>
-              </div>
-              <h3 className="font-display text-xl font-semibold text-slate-50 mb-3">
-                Our Vision
-              </h3>
-              <p className="text-slate-400 leading-relaxed">
-                To be the premier healthcare manufacturing platform, recognized for 
-                operational excellence, regulatory leadership, and sustainable value creation.
-              </p>
-            </motion.div>
-
-            <motion.div
-              variants={fadeUpVariant}
-              className="p-8 rounded-2xl bg-slate-900/50 border border-slate-800/50 text-left"
-            >
-              <div className="w-12 h-12 rounded-xl bg-burgundy/10 flex items-center justify-center mb-4">
-                <span className="text-2xl">🧭</span>
-              </div>
-              <h3 className="font-display text-xl font-semibold text-slate-50 mb-3">
-                Our Mission
-              </h3>
-              <p className="text-slate-400 leading-relaxed">
-                To build, integrate, and operate a world-class pharmaceutical manufacturing 
-                platform that delivers essential medicines to patients worldwide.
-              </p>
-            </motion.div>
-          </motion.div>
+          <div className="grid gap-10 sm:grid-cols-2 lg:col-span-7 lg:col-start-6">
+            {pillars.map((p) => (
+              <motion.div key={p.label} variants={reveal} className="border-t border-white/[0.12] pt-6">
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-coral">{p.label}</p>
+                <p className="mt-4 text-[15px] leading-7 text-slate-300">{p.text}</p>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>

@@ -1,276 +1,272 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  fadeUpVariant, 
-  staggerContainerVariant,
-  defaultViewport,
-  easeOutExpo 
-} from '@/lib/animations'
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
-import { portfolioCompanies } from '@/lib/portfolio'
+import { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { ChevronDown } from 'lucide-react'
+import { HEADQUARTERS, portfolioCompanies, type PortfolioCompany } from '@/lib/portfolio'
+import { verticalColor } from '@/lib/verticals'
+import { easeOutExpo, inView, reveal, revealGroup } from '@/lib/animations'
+import { SectionHeader } from '@/components/ui/SectionHeader'
+import { Exhibit } from '@/components/ui/Exhibit'
 
-const categoryColors = {
-  Generics: 'bg-coral/10 text-coral',
-  CMO: 'bg-burgundy/10 text-burgundy-light',
-  Specialty: 'bg-coral-light/10 text-coral-light',
+// ── Map projection ──────────────────────────────────────────────────────────
+// Equirectangular crop from Boston to Hyderabad; longitude is squeezed ~0.9x
+// so shapes stay sensible at these latitudes. Positions are the real sites.
+
+const W = 720
+const H = 330
+const PAD = 22
+const LON = [-80, 90] as const
+const LAT = [10, 60] as const
+
+function project([lat, lon]: readonly [number, number]) {
+  return {
+    x: PAD + ((lon - LON[0]) / (LON[1] - LON[0])) * (W - 2 * PAD),
+    y: PAD + ((LAT[1] - lat) / (LAT[1] - LAT[0])) * (H - 2 * PAD),
+  }
 }
 
-const statusColors = {
-  Active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-  Integration: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  Growth: 'bg-coral/10 text-coral border-coral/30',
+/** Where each site's label sits relative to its node, so nearby cities don't collide. */
+const LABEL_OFFSET: Record<string, { dx: number; dy: number; anchor: 'start' | 'middle' | 'end' }> = {
+  pharmatech: { dx: -12, dy: 4, anchor: 'end' },
+  'generic-plus': { dx: 0, dy: 26, anchor: 'middle' },
+  'biomed-contract': { dx: -12, dy: 4, anchor: 'end' },
+  'sterile-solutions': { dx: 12, dy: -6, anchor: 'start' },
+  neurogen: { dx: 0, dy: 24, anchor: 'middle' },
+}
+
+const STATUS_LABEL: Record<PortfolioCompany['status'], string> = {
+  Active: 'Active',
+  Integration: 'In integration',
+  Growth: 'Growth',
+}
+
+const city = (c: PortfolioCompany) => c.location.split(',')[0]
+
+function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: string) => void }) {
+  const reduced = useReducedMotion() ?? false
+  const hq = project(HEADQUARTERS.coordinates)
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Portfolio sites plotted by latitude and longitude, each connected to the Zurich headquarters">
+      <defs>
+        <filter id="portfolio-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+
+      {/* Graticule */}
+      {[-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75, 90].map((lon) => {
+        const { x } = project([0, lon])
+        return <line key={`m${lon}`} x1={x} y1={PAD} x2={x} y2={H - PAD} className="stroke-white/[0.05]" />
+      })}
+      {[20, 30, 40, 50].map((lat) => {
+        const { y } = project([lat, 0])
+        return (
+          <g key={`p${lat}`}>
+            <line x1={PAD} y1={y} x2={W - PAD} y2={y} className="stroke-white/[0.05]" />
+            <text x={PAD + 4} y={y - 5} className="fill-slate-600 font-mono text-[9px]">
+              {lat}°N
+            </text>
+          </g>
+        )
+      })}
+      {[-60, -30, 0, 30, 60].map((lon) => {
+        const { x } = project([0, lon])
+        return (
+          <text key={`l${lon}`} x={x + 4} y={H - PAD - 6} className="fill-slate-600 font-mono text-[9px]">
+            {lon === 0 ? '0°' : `${Math.abs(lon)}°${lon < 0 ? 'W' : 'E'}`}
+          </text>
+        )
+      })}
+
+      {/* Arcs from headquarters */}
+      {portfolioCompanies.map((c, i) => {
+        const p = project(c.coordinates)
+        const mx = (hq.x + p.x) / 2
+        const my = (hq.y + p.y) / 2
+        const dist = Math.hypot(p.x - hq.x, p.y - hq.y)
+        const d = `M ${hq.x} ${hq.y} Q ${mx} ${my - dist * 0.28} ${p.x} ${p.y}`
+        const lit = focusId === c.id
+        const color = verticalColor(c.category)
+        return (
+          <g key={c.id}>
+            {lit ? <path d={d} fill="none" stroke={color} strokeWidth={5} opacity={0.35} filter="url(#portfolio-glow)" /> : null}
+            {/* the lit link carries a flow of pulses from headquarters out to the site */}
+            {lit ? <path d={d} fill="none" stroke="#fff4ee" strokeWidth={1.6} strokeLinecap="round" className="portfolio-flow" /> : null}
+            <motion.path
+              d={d}
+              fill="none"
+              stroke={color}
+              strokeWidth={lit ? 1.8 : 1.1}
+              strokeOpacity={lit ? 1 : 0.4}
+              strokeLinecap="round"
+              className="transition-[stroke-opacity,stroke-width] duration-300"
+              initial={{ pathLength: 0 }}
+              whileInView={{ pathLength: 1 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 1.2, ease: easeOutExpo, delay: 0.3 + i * 0.12 }}
+            />
+          </g>
+        )
+      })}
+
+      {/* Headquarters */}
+      <circle cx={hq.x} cy={hq.y} r={7} fill="none" className="stroke-slate-200" strokeWidth={1.2} />
+      <circle cx={hq.x} cy={hq.y} r={2.4} className="fill-slate-100" />
+      <text x={hq.x - 12} y={hq.y + 18} textAnchor="end" className="fill-slate-300 font-mono text-[10px] uppercase tracking-[0.12em]">
+        Zurich · HQ
+      </text>
+
+      {/* Sites */}
+      {portfolioCompanies.map((c) => {
+        const p = project(c.coordinates)
+        const lit = focusId === c.id
+        const color = verticalColor(c.category)
+        const label = LABEL_OFFSET[c.id] ?? { dx: 10, dy: 4, anchor: 'start' as const }
+        return (
+          <g key={c.id} className="cursor-pointer" onMouseEnter={() => onFocus(c.id)} onClick={() => onFocus(c.id)}>
+            {lit && !reduced ? (
+              <motion.circle
+                cx={p.x}
+                cy={p.y}
+                r={6}
+                fill="none"
+                stroke={color}
+                strokeWidth={1}
+                initial={{ r: 6, opacity: 0.9 }}
+                animate={{ r: 18, opacity: 0 }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+              />
+            ) : null}
+            <circle cx={p.x} cy={p.y} r={lit ? 11 : 8} fill={verticalColor(c.category, 0.3)} filter="url(#portfolio-glow)" />
+            <circle cx={p.x} cy={p.y} r={lit ? 6.5 : 5} fill={color} />
+            <circle cx={p.x} cy={p.y} r={14} fill="transparent" />
+            <text
+              x={p.x + label.dx}
+              y={p.y + label.dy}
+              textAnchor={label.anchor}
+              className={`font-mono text-[11px] uppercase tracking-[0.12em] transition-colors ${lit ? 'fill-slate-50' : 'fill-slate-400'}`}
+            >
+              {city(c)}
+            </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
 }
 
 export function Portfolio() {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [direction, setDirection] = useState(0)
-  const carouselRef = useRef<HTMLDivElement>(null)
-
-  const activeCompany = portfolioCompanies[activeIndex]
-
-  const handlePrevious = () => {
-    setDirection(-1)
-    setActiveIndex((prev) => (prev === 0 ? portfolioCompanies.length - 1 : prev - 1))
-  }
-
-  const handleNext = () => {
-    setDirection(1)
-    setActiveIndex((prev) => (prev === portfolioCompanies.length - 1 ? 0 : prev + 1))
-  }
-
-  // Auto-advance carousel
-  useEffect(() => {
-    const interval = setInterval(() => {
-      handleNext()
-    }, 8000)
-
-    return () => clearInterval(interval)
-  }, [activeIndex])
-
-  const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 300 : -300,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction < 0 ? 300 : -300,
-      opacity: 0,
-    }),
-  }
+  const [openId, setOpenId] = useState(portfolioCompanies[0].id)
+  const [hoverId, setHoverId] = useState<string | null>(null)
+  const focusId = hoverId ?? openId
 
   return (
-    <section 
-      id="portfolio"
-      className="relative py-24 md:py-32 section-padding bg-slate-900"
-      aria-labelledby="portfolio-heading"
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Section header */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="mb-16 md:mb-24"
-        >
-          <motion.span 
-            variants={fadeUpVariant}
-            className="inline-block text-sm font-medium text-coral uppercase tracking-wider mb-4"
+    <section id="portfolio" aria-labelledby="portfolio-heading" className="relative section-padding py-28 md:py-36">
+      <div className="mx-auto max-w-7xl">
+        <SectionHeader
+          id="portfolio-heading"
+          eyebrow="Portfolio"
+          title={
+            <>
+              Five companies.
+              <br />
+              <span className="text-coral">Three continents. One platform.</span>
+            </>
+          }
+          lede="Our portfolio spans three continents, integrating leading pharmaceutical manufacturing capabilities across generics, CMO, and specialty segments."
+        />
+
+        <div className="mt-16 grid gap-10 lg:mt-20 lg:grid-cols-12 lg:gap-12">
+          <div className="lg:col-span-7">
+            <div className="lg:sticky lg:top-28">
+              <Exhibit label="Exhibit 4" title="Portfolio sites" note="Plotted by latitude & longitude">
+                <div onMouseLeave={() => setHoverId(null)}>
+                  <PortfolioMap focusId={focusId} onFocus={(id) => setHoverId(id)} />
+                </div>
+              </Exhibit>
+            </div>
+          </div>
+
+          <motion.ul
+            variants={revealGroup}
+            initial="hidden"
+            whileInView="visible"
+            viewport={inView}
+            className="lg:col-span-5"
+            onMouseLeave={() => setHoverId(null)}
           >
-            Portfolio Companies
-          </motion.span>
-          
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <motion.h2 
-                id="portfolio-heading"
-                variants={fadeUpVariant}
-                className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-slate-50 mb-4"
-              >
-                Building a Global Platform
-              </motion.h2>
-              
-              <motion.p 
-                variants={fadeUpVariant}
-                className="text-lg text-slate-400 max-w-xl"
-              >
-                Our portfolio spans three continents, integrating leading pharmaceutical 
-                manufacturing capabilities across generics, CMO, and specialty segments.
-              </motion.p>
-            </div>
-
-            {/* Navigation controls */}
-            <motion.div 
-              variants={fadeUpVariant}
-              className="flex items-center gap-4"
-            >
-              <button
-                onClick={handlePrevious}
-                className="p-3 rounded-full border border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600 transition-colors"
-                aria-label="Previous company"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleNext}
-                className="p-3 rounded-full border border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600 transition-colors"
-                aria-label="Next company"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Carousel */}
-        <div ref={carouselRef} className="relative">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Company card */}
-            <div className="relative h-[400px] md:h-[450px]">
-              <AnimatePresence initial={false} custom={direction} mode="wait">
-                <motion.div
-                  key={activeCompany.id}
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.4, ease: easeOutExpo }}
-                  className="absolute inset-0"
-                >
-                  <div className="h-full p-8 lg:p-10 rounded-2xl bg-slate-800/50 border border-slate-700/50 flex flex-col">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        {/* Logo monogram */}
-                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-coral to-burgundy flex items-center justify-center">
-                          <span className="font-display font-bold text-xl text-slate-50">
-                            {activeCompany.logo}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="font-display text-xl font-semibold text-slate-50">
-                            {activeCompany.name}
-                          </h3>
-                          <p className="text-sm text-slate-400">{activeCompany.location}</p>
-                        </div>
-                      </div>
-                      
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[activeCompany.status]}`}>
-                        {activeCompany.status}
+            {portfolioCompanies.map((c) => {
+              const open = openId === c.id
+              const color = verticalColor(c.category)
+              return (
+                <motion.li key={c.id} variants={reveal} className="border-t border-white/[0.08] last:border-b">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls={`company-${c.id}`}
+                    onClick={() => setOpenId(c.id)}
+                    onMouseEnter={() => setHoverId(c.id)}
+                    onFocus={() => setHoverId(c.id)}
+                    onBlur={() => setHoverId(null)}
+                    className="group flex w-full items-center gap-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-coral"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0 rounded-full transition-shadow duration-500"
+                      style={{ background: color, boxShadow: focusId === c.id ? `0 0 14px 3px ${verticalColor(c.category, 0.5)}` : 'none' }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`block truncate font-display text-lg font-semibold tracking-[-0.01em] transition-colors md:text-xl ${
+                          focusId === c.id ? 'text-slate-50' : 'text-slate-300'
+                        }`}
+                      >
+                        {c.name}
                       </span>
-                    </div>
-
-                    {/* Category badge */}
-                    <span className={`inline-flex self-start px-3 py-1 rounded-full text-sm font-medium mb-4 ${categoryColors[activeCompany.category]}`}>
-                      {activeCompany.category}
+                      <span className="mt-1 block font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                        {c.category} · {city(c)} · {c.year}
+                      </span>
                     </span>
-
-                    {/* Description */}
-                    <p className="text-slate-300 leading-relaxed mb-auto">
-                      {activeCompany.description}
-                    </p>
-
-                    {/* Metrics */}
-                    <div className="grid grid-cols-3 gap-4 pt-6 mt-6 border-t border-slate-700/50">
-                      {Object.entries(activeCompany.metrics).slice(0, 3).map(([key, value]) => (
-                        <div key={key}>
-                          <div className="font-display text-xl font-bold text-slate-50">
-                            {value}
-                          </div>
-                          <div className="text-xs text-slate-500 capitalize">
-                            {key}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Company list */}
-            <div className="space-y-3">
-              {portfolioCompanies.map((company, index) => (
-                <motion.button
-                  key={company.id}
-                  onClick={() => {
-                    setDirection(index > activeIndex ? 1 : -1)
-                    setActiveIndex(index)
-                  }}
-                  className={`
-                    w-full text-left p-4 rounded-xl border transition-all duration-300
-                    ${index === activeIndex 
-                      ? 'bg-slate-800/80 border-coral/30' 
-                      : 'bg-slate-800/30 border-slate-800/50 hover:bg-slate-800/50 hover:border-slate-700'
-                    }
-                  `}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`
-                        w-10 h-10 rounded-lg flex items-center justify-center
-                        ${index === activeIndex ? 'bg-coral/20' : 'bg-slate-700/50'}
-                      `}>
-                        <span className={`
-                          font-display font-semibold text-sm
-                          ${index === activeIndex ? 'text-coral' : 'text-slate-400'}
-                        `}>
-                          {company.logo}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className={`font-medium ${index === activeIndex ? 'text-slate-50' : 'text-slate-300'}`}>
-                          {company.name}
-                        </h4>
-                        <p className="text-sm text-slate-500">{company.category} · {company.year}</p>
-                      </div>
-                    </div>
-                    
-                    {index === activeIndex && (
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-300 ${open ? 'rotate-180 text-slate-200' : ''}`}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {open ? (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-2 h-2 rounded-full bg-coral"
-                      />
-                    )}
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-12 flex items-center gap-2">
-          {portfolioCompanies.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setDirection(index > activeIndex ? 1 : -1)
-                setActiveIndex(index)
-              }}
-              className="flex-1 h-1 rounded-full overflow-hidden bg-slate-800"
-              aria-label={`Go to company ${index + 1}`}
-            >
-              <motion.div
-                className="h-full bg-coral"
-                initial={{ width: 0 }}
-                animate={{ width: index === activeIndex ? '100%' : index < activeIndex ? '100%' : '0%' }}
-                transition={{ duration: index === activeIndex ? 8 : 0.3 }}
-              />
-            </button>
-          ))}
+                        id={`company-${c.id}`}
+                        key="details"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.45, ease: easeOutExpo }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pb-7 pl-[1.625rem]">
+                          <p className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-300">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.status === 'Integration' ? 'var(--coral)' : c.status === 'Growth' ? 'var(--specialty)' : 'var(--independent)' }} />
+                            {STATUS_LABEL[c.status]}
+                          </p>
+                          <p className="mt-4 max-w-md text-[15px] leading-7 text-slate-300">{c.description}</p>
+                          <dl className="mt-5 flex flex-wrap gap-x-10 gap-y-4">
+                            {Object.entries(c.metrics).map(([key, value]) => (
+                              <div key={key} className="flex flex-col-reverse">
+                                <dt className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">{key}</dt>
+                                <dd className="font-display text-xl font-bold tracking-[-0.02em] text-slate-50">{value}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        </div>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </motion.li>
+              )
+            })}
+          </motion.ul>
         </div>
       </div>
     </section>

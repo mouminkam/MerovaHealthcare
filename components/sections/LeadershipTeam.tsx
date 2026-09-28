@@ -1,20 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-  fadeUpVariant, 
-  staggerContainerVariant,
-  cardHoverVariant,
-  defaultViewport 
-} from '@/lib/animations'
-import { Linkedin } from 'lucide-react'
+import { inView, reveal, revealGroup } from '@/lib/animations'
+import { SectionHeader } from '@/components/ui/SectionHeader'
 
 interface TeamMember {
   name: string
   role: string
   bio: string
   initials: string
-  linkedin?: string
 }
 
 const teamMembers: TeamMember[] = [
@@ -23,42 +17,36 @@ const teamMembers: TeamMember[] = [
     role: 'Chairman & CEO',
     initials: 'AR',
     bio: '25+ years in pharmaceutical M&A and operations. Former strategy-consulting partner who led $5B+ in healthcare transactions.',
-    linkedin: '#',
   },
   {
     name: 'Sarah Chen',
     role: 'Chief Investment Officer',
     initials: 'SC',
     bio: 'Previously managed a $2B healthcare portfolio at a global private-equity firm. MBA and MPH.',
-    linkedin: '#',
   },
   {
     name: 'Dr. Raj Patel',
     role: 'Chief Operating Officer',
     initials: 'RP',
     bio: 'Former SVP Operations at a top-10 generics manufacturer. Led manufacturing integration for 15+ facilities across 3 continents.',
-    linkedin: '#',
   },
   {
     name: 'Maria Kowalski',
     role: 'Chief Financial Officer',
     initials: 'MK',
     bio: '20 years in healthcare finance. Former CFO of a multinational specialty-pharma group; led financial integration of $10B+ in acquisitions.',
-    linkedin: '#',
   },
   {
     name: 'Dr. James Morrison',
     role: 'Chief Scientific Officer',
     initials: 'JM',
     bio: 'PhD Pharmaceutical Sciences. 50+ product approvals; built R&D organizations at two global generics companies.',
-    linkedin: '#',
   },
   {
     name: 'Lisa Nakamura',
     role: 'Chief Regulatory Officer',
     initials: 'LN',
     bio: 'Former drug-agency reviewer. 18 years of regulatory affairs experience across the US, EU and emerging markets.',
-    linkedin: '#',
   },
 ]
 
@@ -68,138 +56,75 @@ const advisoryBoard = [
   { name: 'Marcus Thompson', role: 'Former partner, healthcare private equity', initials: 'MT' },
 ]
 
+/** Initials inside a ring banded like the platform sphere. */
+function Monogram({ initials, size = 'lg' }: { initials: string; size?: 'lg' | 'sm' }) {
+  const box = size === 'lg' ? 'h-14 w-14 text-base' : 'h-11 w-11 text-sm'
+  return (
+    <span aria-hidden="true" className={`shrink-0 rounded-full bg-gradient-to-b from-specialty via-coral to-cmo p-px ${box}`}>
+      <span className="flex h-full w-full items-center justify-center rounded-full bg-slate-950 font-display font-bold tracking-[-0.02em] text-slate-100">
+        {initials}
+      </span>
+    </span>
+  )
+}
+
 export function LeadershipTeam() {
   return (
-    <section 
-      id="leadership"
-      className="relative py-24 md:py-32 section-padding bg-slate-950"
-      aria-labelledby="leadership-heading"
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Section header */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="mb-16 md:mb-24"
-        >
-          <motion.span 
-            variants={fadeUpVariant}
-            className="inline-block text-sm font-medium text-coral uppercase tracking-wider mb-4"
-          >
-            Leadership
-          </motion.span>
-          
-          <motion.h2 
-            id="leadership-heading"
-            variants={fadeUpVariant}
-            className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-slate-50 mb-6"
-          >
-            Experienced Operators.<br />
-            <span className="text-gradient">Proven Track Record.</span>
-          </motion.h2>
-          
-          <motion.p 
-            variants={fadeUpVariant}
-            className="text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed"
-          >
-            Our leadership team brings decades of pharmaceutical manufacturing, M&A, 
-            and operational excellence experience from leading global organizations.
-          </motion.p>
-        </motion.div>
+    <section id="leadership" aria-labelledby="leadership-heading" className="relative section-padding py-28 md:py-36">
+      <div className="mx-auto max-w-7xl">
+        <SectionHeader
+          id="leadership-heading"
+          eyebrow="Leadership"
+          title={
+            <>
+              Operators who have
+              <br />
+              <span className="text-coral">done this before.</span>
+            </>
+          }
+          lede="Our leadership team brings decades of pharmaceutical manufacturing, M&A, and operational excellence experience from leading global organizations."
+        />
 
-        {/* Executive team grid */}
-        <motion.div
+        <motion.ul
+          variants={revealGroup}
           initial="hidden"
           whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16 md:mb-24"
+          viewport={inView}
+          className="mt-16 grid gap-x-10 md:grid-cols-2 lg:mt-20 lg:grid-cols-3"
         >
-          {teamMembers.map((member) => (
-            <motion.article
-              key={member.name}
-              variants={fadeUpVariant}
-              initial="rest"
-              whileHover="hover"
-              className="group"
-            >
-              <motion.div
-                variants={cardHoverVariant}
-                className="h-full p-6 lg:p-8 rounded-2xl bg-slate-900/50 border border-slate-800/50 hover:border-slate-700/50 transition-colors duration-300"
-              >
-                <div className="flex items-start justify-between mb-6">
-                  {/* Avatar monogram */}
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-coral to-burgundy flex items-center justify-center">
-                    <span className="font-display font-bold text-xl text-slate-50">
-                      {member.initials}
-                    </span>
-                  </div>
-                  
-                  {member.linkedin && (
-                    <a 
-                      href={member.linkedin}
-                      className="p-2 rounded-lg text-slate-500 hover:text-coral hover:bg-slate-800/50 transition-colors"
-                      aria-label={`${member.name} LinkedIn profile`}
-                    >
-                      <Linkedin className="w-5 h-5" />
-                    </a>
-                  )}
+          {teamMembers.map((m) => (
+            <motion.li key={m.name} variants={reveal} className="border-t border-white/[0.08] py-9">
+              <div className="flex items-center gap-4">
+                <Monogram initials={m.initials} />
+                <div className="min-w-0">
+                  <h3 className="font-display text-xl font-bold tracking-[-0.02em] text-slate-50">{m.name}</h3>
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-coral">{m.role}</p>
                 </div>
-
-                <h3 className="font-display text-xl font-semibold text-slate-50 mb-1">
-                  {member.name}
-                </h3>
-                
-                <p className="text-sm font-medium text-coral mb-4">
-                  {member.role}
-                </p>
-                
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {member.bio}
-                </p>
-              </motion.div>
-            </motion.article>
+              </div>
+              <p className="mt-5 text-[15px] leading-7 text-slate-400">{m.bio}</p>
+            </motion.li>
           ))}
-        </motion.div>
+        </motion.ul>
 
-        {/* Advisory board */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={defaultViewport}
-          variants={staggerContainerVariant}
-        >
-          <motion.h3 
-            variants={fadeUpVariant}
-            className="font-display text-2xl font-semibold text-slate-50 mb-8 text-center"
-          >
-            Advisory Board
-          </motion.h3>
-          
-          <motion.div 
-            variants={staggerContainerVariant}
-            className="flex flex-wrap justify-center gap-6"
-          >
-            {advisoryBoard.map((advisor) => (
-              <motion.div
-                key={advisor.name}
-                variants={fadeUpVariant}
-                className="flex items-center gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-800/50"
+        <motion.div variants={revealGroup} initial="hidden" whileInView="visible" viewport={inView} className="mt-14 lg:mt-20">
+          <motion.p variants={reveal} className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Advisory board
+          </motion.p>
+          <ul className="mt-6 grid gap-4 md:grid-cols-3">
+            {advisoryBoard.map((a) => (
+              <motion.li
+                key={a.name}
+                variants={reveal}
+                className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5"
               >
-                <div className="w-12 h-12 rounded-full bg-slate-700/50 flex items-center justify-center">
-                  <span className="font-display font-semibold text-slate-300">
-                    {advisor.initials}
-                  </span>
+                <Monogram initials={a.initials} size="sm" />
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-100">{a.name}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{a.role}</p>
                 </div>
-                <div>
-                  <div className="font-medium text-slate-50">{advisor.name}</div>
-                  <div className="text-sm text-slate-500">{advisor.role}</div>
-                </div>
-              </motion.div>
+              </motion.li>
             ))}
-          </motion.div>
+          </ul>
         </motion.div>
       </div>
     </section>

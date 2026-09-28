@@ -6,6 +6,8 @@ export interface PortfolioCompany {
   logo: string // Will be a monogram for now
   category: 'Generics' | 'CMO' | 'Specialty'
   location: string
+  /** Latitude, longitude of the site — plotted on the portfolio map. */
+  coordinates: readonly [number, number]
   status: 'Active' | 'Integration' | 'Growth'
   description: string
   metrics: {
@@ -24,6 +26,7 @@ export const portfolioCompanies: PortfolioCompany[] = [
     logo: 'PT',
     category: 'Generics',
     location: 'Mumbai, India',
+    coordinates: [19.08, 72.88],
     status: 'Active',
     description: 'Leading manufacturer of generic oral solid dosage forms with FDA-approved facilities and a portfolio of 120+ products.',
     metrics: {
@@ -39,6 +42,7 @@ export const portfolioCompanies: PortfolioCompany[] = [
     logo: 'BC',
     category: 'CMO',
     location: 'Dublin, Ireland',
+    coordinates: [53.35, -6.26],
     status: 'Integration',
     description: 'EU-GMP certified contract manufacturer specializing in sterile injectables and complex formulations.',
     metrics: {
@@ -54,6 +58,7 @@ export const portfolioCompanies: PortfolioCompany[] = [
     logo: 'NG',
     category: 'Specialty',
     location: 'Boston, USA',
+    coordinates: [42.36, -71.06],
     status: 'Growth',
     description: 'Specialty pharmaceutical company focused on CNS disorders with a pipeline of novel delivery systems.',
     metrics: {
@@ -69,6 +74,7 @@ export const portfolioCompanies: PortfolioCompany[] = [
     logo: 'G+',
     category: 'Generics',
     location: 'Hyderabad, India',
+    coordinates: [17.39, 78.49],
     status: 'Active',
     description: 'High-volume generics manufacturer with vertically integrated API production capabilities.',
     metrics: {
@@ -84,6 +90,7 @@ export const portfolioCompanies: PortfolioCompany[] = [
     logo: 'SS',
     category: 'CMO',
     location: 'Frankfurt, Germany',
+    coordinates: [50.11, 8.68],
     status: 'Integration',
     description: 'Specialized CMO for parenteral products with state-of-the-art isolator technology.',
     metrics: {
@@ -94,3 +101,6 @@ export const portfolioCompanies: PortfolioCompany[] = [
     year: 2025,
   },
 ]
+
+/** Group headquarters — the hub every portfolio company connects to. */
+export const HEADQUARTERS = { city: 'Zurich', country: 'Switzerland', coordinates: [47.38, 8.54] as const }

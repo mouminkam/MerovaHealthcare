@@ -256,6 +256,7 @@ export function PlatformSequenceHero() {
   return (
     <section
       ref={sectionRef}
+      id="top"
       aria-labelledby="hero-heading"
       className={reduced ? 'relative h-[100svh]' : 'relative h-[400svh]'}
     >
@@ -391,7 +392,8 @@ export function PlatformSequenceHero() {
                         ref={(node) => {
                           barRefs.current[k] = node
                         }}
-                        className="block h-full origin-left scale-x-0 bg-coral"
+                        className="block h-full origin-left bg-coral"
+                      style={{ transform: 'scaleX(0)' }}
                       />
                     </span>
                   </li>

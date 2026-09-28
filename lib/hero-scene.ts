@@ -11,17 +11,9 @@
  */
 
 import { portfolioCompanies } from './portfolio'
+import { INDEPENDENT, VERTICALS, VERTICAL_INDEX, type RGB } from './verticals'
 
-export type RGB = readonly [number, number, number]
-
-export const VERTICALS: readonly { label: string; rgb: RGB }[] = [
-  { label: 'Generics', rgb: [232, 146, 124] }, // coral
-  { label: 'CMO services', rgb: [201, 70, 102] }, // burgundy, lifted so it glows on slate
-  { label: 'Specialty', rgb: [247, 190, 168] }, // coral-light
-]
-
-/** A manufacturer that isn't part of the platform (yet). */
-export const INDEPENDENT: RGB = [124, 131, 148]
+export { INDEPENDENT, VERTICALS }
 
 export interface Company {
   name: string
@@ -38,8 +30,6 @@ export const TIMELINE = {
   /** How long a company's label stays up after its acquisition. */
   labelHold: 0.052,
 } as const
-
-const VERTICAL_INDEX = { Generics: 0, CMO: 1, Specialty: 2 } as const
 
 /**
  * The portfolio companies (lib/portfolio.ts), in order of acquisition. The
@@ -436,17 +426,24 @@ export class HeroSceneRenderer {
     this.dpr = dpr
     this.canvas.width = Math.max(1, Math.round(w * dpr))
     this.canvas.height = Math.max(1, Math.round(h * dpr))
-    this.f = Math.min(h * 0.9, w * 1.1)
+    this.f = Math.min(h * 0.9, w * 1.1) * this.zoom
     this.cx = w / 2
-    this.cy = h * 0.46
+    this.cy = h * this.centerY
     this.hasPrev.fill(0)
   }
+
+  /** Vertical position of the sphere in the frame (0–1). The hero sits it slightly high. */
+  centerY = 0.46
+  /** Lens zoom; the platform explorer frames the finished sphere tighter than the hero. */
+  zoom = 1
 
   /**
    * Draw the scene at scroll progress `p`. `time` (seconds) only drives ambient
    * motion — drift, twinkle, slow rotation — so an idle page still breathes.
+   * `emphasis` scales each vertical's brightness (1 = normal), which the
+   * platform explorer uses to light one band and dim the rest.
    */
-  render(p: number, time: number, pointerX = 0, pointerY = 0) {
+  render(p: number, time: number, pointerX = 0, pointerY = 0, emphasis?: ArrayLike<number>) {
     const { ctx, scene, w, h, f, cx, cy } = this
     const n = scene.count
 
@@ -556,6 +553,7 @@ export class HeroSceneRenderer {
       }
       if (z3 > 5) alpha *= Math.max(0.15, 1 - (z3 - 5) / 15) // fog
       if (z3 < 0.9) alpha *= (z3 - NEAR) / (0.9 - NEAR) // don't smash into the lens
+      if (emphasis) alpha *= emphasis[scene.vertical[i]]
       this.pa[i] = alpha
 
       const r = scene.size[i] * inv * (1 - 0.38 * e)
