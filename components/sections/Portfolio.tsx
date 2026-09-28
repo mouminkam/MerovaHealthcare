@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { HEADQUARTERS, portfolioCompanies, type PortfolioCompany } from '@/lib/portfolio'
@@ -46,9 +46,20 @@ const city = (c: PortfolioCompany) => c.location.split(',')[0]
 function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: string) => void }) {
   const reduced = useReducedMotion() ?? false
   const hq = project(HEADQUARTERS.coordinates)
+  const svgRef = useRef<SVGSVGElement>(null)
+  // Text and nodes scale inversely with the rendered width, so a phone-sized map stays legible.
+  const [k, setK] = useState(1)
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setK(Math.min(2.2, Math.max(1, 600 / entry.contentRect.width))))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const node = Math.sqrt(k)
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Portfolio sites plotted by latitude and longitude, each connected to the Zurich headquarters">
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Portfolio sites plotted by latitude and longitude, each connected to the Zurich headquarters">
       <defs>
         <filter id="portfolio-glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="3" />
@@ -65,7 +76,7 @@ function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: str
         return (
           <g key={`p${lat}`}>
             <line x1={PAD} y1={y} x2={W - PAD} y2={y} className="stroke-white/[0.05]" />
-            <text x={PAD + 4} y={y - 5} className="fill-slate-600 font-mono text-[9px]">
+            <text x={PAD + 4} y={y - 5} className="fill-slate-600 font-mono" style={{ fontSize: 9 * k }}>
               {lat}°N
             </text>
           </g>
@@ -74,7 +85,7 @@ function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: str
       {[-60, -30, 0, 30, 60].map((lon) => {
         const { x } = project([0, lon])
         return (
-          <text key={`l${lon}`} x={x + 4} y={H - PAD - 6} className="fill-slate-600 font-mono text-[9px]">
+          <text key={`l${lon}`} x={x + 4} y={H - PAD - 6} className="fill-slate-600 font-mono" style={{ fontSize: 9 * k }}>
             {lon === 0 ? '0°' : `${Math.abs(lon)}°${lon < 0 ? 'W' : 'E'}`}
           </text>
         )
@@ -112,9 +123,9 @@ function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: str
       })}
 
       {/* Headquarters */}
-      <circle cx={hq.x} cy={hq.y} r={7} fill="none" className="stroke-slate-200" strokeWidth={1.2} />
-      <circle cx={hq.x} cy={hq.y} r={2.4} className="fill-slate-100" />
-      <text x={hq.x - 12} y={hq.y + 18} textAnchor="end" className="fill-slate-300 font-mono text-[10px] uppercase tracking-[0.12em]">
+      <circle cx={hq.x} cy={hq.y} r={7 * node} fill="none" className="stroke-slate-200" strokeWidth={1.2} />
+      <circle cx={hq.x} cy={hq.y} r={2.4 * node} className="fill-slate-100" />
+      <text x={hq.x - 12 * k} y={hq.y + 18 * k} textAnchor="end" className="fill-slate-300 font-mono uppercase tracking-[0.12em]" style={{ fontSize: 10 * k }}>
         Zurich · HQ
       </text>
 
@@ -139,14 +150,15 @@ function PortfolioMap({ focusId, onFocus }: { focusId: string; onFocus: (id: str
                 transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
               />
             ) : null}
-            <circle cx={p.x} cy={p.y} r={lit ? 11 : 8} fill={verticalColor(c.category, 0.3)} filter="url(#portfolio-glow)" />
-            <circle cx={p.x} cy={p.y} r={lit ? 6.5 : 5} fill={color} />
-            <circle cx={p.x} cy={p.y} r={14} fill="transparent" />
+            <circle cx={p.x} cy={p.y} r={(lit ? 11 : 8) * node} fill={verticalColor(c.category, 0.3)} filter="url(#portfolio-glow)" />
+            <circle cx={p.x} cy={p.y} r={(lit ? 6.5 : 5) * node} fill={color} />
+            <circle cx={p.x} cy={p.y} r={14 * node} fill="transparent" />
             <text
-              x={p.x + label.dx}
-              y={p.y + label.dy}
+              x={p.x + label.dx * k}
+              y={p.y + label.dy * k}
               textAnchor={label.anchor}
-              className={`font-mono text-[11px] uppercase tracking-[0.12em] transition-colors ${lit ? 'fill-slate-50' : 'fill-slate-400'}`}
+              className={`font-mono uppercase tracking-[0.12em] transition-colors ${lit ? 'fill-slate-50' : 'fill-slate-400'}`}
+              style={{ fontSize: 11 * k }}
             >
               {city(c)}
             </text>

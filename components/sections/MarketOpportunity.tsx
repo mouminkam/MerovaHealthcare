@@ -152,6 +152,7 @@ export function MarketOpportunity() {
                       style={m.outline ? { border: `1px dashed ${rgb(m.color)}` } : { background: rgb(m.color) }}
                     />
                     {m.label}
+                    <span className="ml-auto font-display text-sm font-bold normal-case tracking-[-0.01em] text-slate-100">{m.display}</span>
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{m.note}</p>
                 </li>

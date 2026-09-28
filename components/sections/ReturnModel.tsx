@@ -45,7 +45,7 @@ function ValueCreation() {
           </motion.div>
         ))}
       </div>
-      <div className="mt-7 grid grid-cols-3 gap-4">
+      <div className="mt-7 grid gap-6 sm:grid-cols-3 sm:gap-4">
         {levers.map((l) => (
           <div key={l.phase}>
             <p className={`font-mono text-[11px] uppercase tracking-[0.14em] ${l.phase === 'Operations' ? 'text-coral' : 'text-slate-300'}`}>{l.phase}</p>
@@ -72,20 +72,31 @@ function Timeline() {
         <div className="pointer-events-none absolute inset-y-0 z-10 border-l border-dashed border-coral/60" style={{ left: pct(2) }}>
           <span className="absolute -top-6 left-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.12em] text-coral">Distributions begin</span>
         </div>
-        <ul className="space-y-3 pt-2">
+        {/* Gantt rows: the label sits above its bar, so it reads at any width */}
+        <ul className="space-y-5 pt-2">
           {phases.map((ph, i) => (
-            <li key={ph.label} className="relative h-12">
-              <motion.div
-                className="absolute inset-y-0 flex origin-left flex-col justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] px-3"
-                style={{ left: pct(ph.from), width: `calc(${pct(ph.to - ph.from)} - 4px)` }}
-                initial={{ scaleX: 0, opacity: 0 }}
-                whileInView={{ scaleX: 1, opacity: 1 }}
-                viewport={{ once: true, amount: 0.8 }}
-                transition={{ duration: 0.8, ease: easeOutExpo, delay: 0.1 + i * 0.12 }}
+            <li key={ph.label} className="relative">
+              <p
+                className="whitespace-nowrap text-sm font-medium text-slate-100"
+                style={{ paddingLeft: pct(ph.from), textAlign: ph.from >= 4 ? 'right' : 'left' }}
               >
-                <span className="truncate text-sm font-medium text-slate-100">{ph.label}</span>
-                <span className="hidden truncate text-[11px] text-slate-500 sm:block">{ph.description}</span>
-              </motion.div>
+                {ph.label}
+                <span className="ml-2 hidden text-xs font-normal text-slate-500 md:inline">{ph.description}</span>
+              </p>
+              <div className="relative mt-2 h-2.5">
+                <motion.div
+                  className="absolute inset-y-0 origin-left rounded-full"
+                  style={{
+                    left: pct(ph.from),
+                    width: `calc(${pct(ph.to - ph.from)} - 3px)`,
+                    background: 'linear-gradient(90deg, rgba(232,146,124,0.35), var(--coral))',
+                  }}
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true, amount: 0.8 }}
+                  transition={{ duration: 0.8, ease: easeOutExpo, delay: 0.1 + i * 0.12 }}
+                />
+              </div>
             </li>
           ))}
         </ul>

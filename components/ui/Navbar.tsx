@@ -30,8 +30,9 @@ export function Navbar() {
   }, [])
 
   // Scroll-spy: the section crossing the middle of the viewport is "current".
+  // Every section is watched — including ones without a nav link — so passing
+  // through, say, the ROVA section clears the highlight instead of leaving a stale one.
   useEffect(() => {
-    const ids = ['top', ...navLinks.map((l) => l.id), 'contact']
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -40,10 +41,7 @@ export function Navbar() {
       },
       { rootMargin: '-45% 0px -50% 0px' },
     )
-    ids.forEach((id) => {
-      const el = document.getElementById(id)
-      if (el) io.observe(el)
-    })
+    document.querySelectorAll('main section[id]').forEach((el) => io.observe(el))
     return () => io.disconnect()
   }, [])
 

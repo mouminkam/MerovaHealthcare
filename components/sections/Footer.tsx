@@ -64,11 +64,11 @@ export function Footer() {
             any securities. Past performance is not indicative of future results. Investments involve risk and possible loss of principal
             capital.
           </p>
-          <div className="flex shrink-0 items-center gap-6 text-sm text-slate-500">
+          <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-500">
             <span>&copy; {new Date().getFullYear()} Merova Healthcare Holding Ltd.</span>
             <a
               href="#"
-              className="inline-flex items-center gap-1.5 text-slate-300 transition-colors hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap text-slate-300 transition-colors hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral"
             >
               Back to top
               <ArrowUp className="h-3.5 w-3.5" />

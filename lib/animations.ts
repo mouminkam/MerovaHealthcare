@@ -15,7 +15,9 @@ export const revealGroup: Variants = {
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
 }
 
-export const inView = { once: true, amount: 0.25 } as const
+// Trigger when the element's top clears the bottom 10% of the viewport — independent of
+// its height, so tall lists on phones don't sit invisible until a quarter is on screen.
+export const inView = { once: true, margin: '0px 0px -10% 0px' } as const
 
 // Fade up animation
 export const fadeUpVariant: Variants = {
