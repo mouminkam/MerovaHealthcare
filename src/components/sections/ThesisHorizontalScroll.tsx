@@ -128,7 +128,8 @@ function ScaleExhibit() {
     .map((c) => ({ name: c.name, value: Number((c.metrics.revenue ?? '0').replace(/[^0-9.]/g, '')), color: VERTICALS[VERTICAL_INDEX[c.category]].rgb }))
   const total = companies.reduce((s, c) => s + c.value, 0)
   const scale = (v: number) => (v / 1000) * 100
-  let offset = 0
+  // Each bar starts where the previous ones end.
+  const lefts = companies.map((_, i) => companies.slice(0, i).reduce((sum, c) => sum + scale(c.value), 0))
   return (
     <div role="img" aria-label={`Portfolio revenue today is $${total}M against a $1B target`}>
       <div className="mb-3 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">
@@ -141,8 +142,7 @@ function ScaleExhibit() {
       </div>
       <div className="relative h-7 rounded-full border border-dashed border-white/15">
         {companies.map((c, i) => {
-          const left = offset
-          offset += scale(c.value)
+          const left = lefts[i]
           return (
             <motion.div
               key={c.name}
