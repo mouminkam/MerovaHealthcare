@@ -23,6 +23,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://merova-project-2.vercel.app'),
   title: 'Merova Healthcare | Building the Future of Healthcare Manufacturing',
   description: 'Merova Healthcare Holding Ltd. is a strategic platform acquiring, integrating, and scaling pharmaceutical manufacturing companies across generics, CMO services, and specialty products.',
   keywords: ['healthcare', 'pharmaceutical', 'manufacturing', 'CMO', 'generics', 'investment', 'healthcare holding'],
@@ -33,11 +34,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'Merova Healthcare',
+    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Merova Healthcare — investor website' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Merova Healthcare | Building the Future of Healthcare Manufacturing',
     description: 'Strategic platform acquiring and scaling pharmaceutical manufacturing companies.',
+    images: ['/og.jpg'],
   },
   robots: {
     index: true,
